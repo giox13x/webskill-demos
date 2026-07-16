@@ -3,4 +3,6 @@ node_modules
 .env*.local
 .env.production
 .vercel
-*.tsbuildin
+*.tsbuildinfo
+*.log
+deploy-manifest*.json
