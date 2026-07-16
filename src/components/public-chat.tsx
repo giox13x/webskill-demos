@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, ThumbsUp, Wand2, Check, Sparkles } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AgentAvatar } from "@/components/agent-avatar";
+import { MessageCorrection } from "@/components/message-correction";
 import { cn } from "@/lib/utils";
 
 interface Msg {
@@ -15,6 +17,8 @@ interface Props {
   exampleId: string;
   exampleSlug: string;
   exampleName: string;
+  agentName?: string;
+  avatarKey?: string;
   corregir: boolean;
 }
 
@@ -34,17 +38,14 @@ function getOrCreateSessionId(exampleSlug: string): string {
   }
 }
 
-export function PublicChat({ exampleId, exampleSlug, exampleName, corregir }: Props) {
+export function PublicChat({ exampleId, exampleSlug, exampleName, agentName, avatarKey, corregir }: Props) {
+  const displayName = agentName?.trim() || exampleName;
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [correctionText, setCorrectionText] = useState("");
-  const [confirmed, setConfirmed] = useState<Set<number>>(new Set());
-  const [savingCorrection, setSavingCorrection] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,44 +97,12 @@ export function PublicChat({ exampleId, exampleSlug, exampleName, corregir }: Pr
     }
   }
 
-  function openCorrection(index: number) {
-    setEditingIndex(index);
-    setCorrectionText(messages[index]?.content ?? "");
-  }
-
-  async function submitCorrection(index: number) {
-    const wrong = messages[index]?.content ?? "";
-    const original = index > 0 ? messages[index - 1]?.content ?? "" : "";
-    const corrected = correctionText.trim();
-    if (!corrected) return;
-    setSavingCorrection(true);
-    try {
-      const res = await fetch(`/api/examples/${exampleId}/corrections`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          originalMessage: original,
-          wrongResponse: wrong,
-          correctedResponse: corrected,
-        }),
-      });
-      if (res.ok) {
-        setConfirmed((prev) => new Set(prev).add(index));
-        setEditingIndex(null);
-      }
-    } finally {
-      setSavingCorrection(false);
-    }
-  }
-
   return (
     <div className="glass flex h-[80vh] max-h-[720px] flex-col overflow-hidden rounded-xl border border-border/50 shadow-lg">
       <header className="glass-strong flex shrink-0 items-center gap-2 border-b border-border/50 px-4 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary">
-          <Sparkles className="h-4 w-4" aria-hidden="true" />
-        </div>
+        <AgentAvatar name={displayName} avatarKey={avatarKey} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{exampleName}</p>
+          <p className="truncate text-sm font-medium">{displayName}</p>
           <p className="text-xs text-muted-foreground">
             {corregir ? "Modo corrección — revisa y corrige las respuestas" : "Asistente virtual"}
           </p>
@@ -163,61 +132,11 @@ export function PublicChat({ exampleId, exampleSlug, exampleName, corregir }: Pr
               </div>
 
               {corregir && m.role === "assistant" && (
-                <div className="max-w-[85%]">
-                  {confirmed.has(i) ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-success">
-                      <Check className="h-3 w-3" aria-hidden="true" /> Corrección guardada
-                    </span>
-                  ) : editingIndex === i ? (
-                    <div className="mt-1 space-y-2 rounded-md border border-border/60 bg-card/80 p-2">
-                      <Textarea
-                        rows={3}
-                        value={correctionText}
-                        onChange={(e) => setCorrectionText(e.target.value)}
-                        placeholder="Escribe la respuesta correcta que debería haber dado..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => void submitCorrection(i)}
-                          disabled={savingCorrection || !correctionText.trim()}
-                        >
-                          {savingCorrection ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                          )}
-                          Guardar corrección
-                        </Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => setEditingIndex(null)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-1.5">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-success"
-                        onClick={() => setConfirmed((prev) => new Set(prev).add(i))}
-                      >
-                        <ThumbsUp className="h-3 w-3" aria-hidden="true" /> Correcto
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-                        onClick={() => openCorrection(i)}
-                      >
-                        <Wand2 className="h-3 w-3" aria-hidden="true" /> Corregir
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <MessageCorrection
+                  exampleId={exampleId}
+                  originalMessage={i > 0 ? messages[i - 1]?.content ?? "" : ""}
+                  assistantMessage={m.content}
+                />
               )}
             </div>
           ))}

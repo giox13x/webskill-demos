@@ -13,7 +13,12 @@ export default async function EjemploChatPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <ChatPanel exampleId={example.id} exampleName={example.name} />
+      <ChatPanel
+        exampleId={example.id}
+        exampleName={example.name}
+        agentName={example.agent_name}
+        avatarKey={example.agent_avatar_key}
+      />
     </div>
   );
 }

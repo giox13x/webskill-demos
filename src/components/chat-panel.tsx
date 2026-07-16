@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, RotateCcw, FlaskConical } from "lucide-react";
+import { Send, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AgentAvatar } from "@/components/agent-avatar";
+import { MessageCorrection } from "@/components/message-correction";
 import { cn } from "@/lib/utils";
 
 interface Msg {
@@ -14,9 +16,11 @@ interface Msg {
 interface Props {
   exampleId: string;
   exampleName: string;
+  agentName?: string;
+  avatarKey?: string;
 }
 
-export function ChatPanel({ exampleId, exampleName }: Props) {
+export function ChatPanel({ exampleId, exampleName, agentName, avatarKey }: Props) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,6 +28,7 @@ export function ChatPanel({ exampleId, exampleName }: Props) {
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const displayName = agentName?.trim() || exampleName;
 
   useEffect(() => {
     (async () => {
@@ -85,8 +90,8 @@ export function ChatPanel({ exampleId, exampleName }: Props) {
     <div className="glass flex h-[600px] flex-col overflow-hidden rounded-lg border border-border/50">
       <header className="glass-strong flex shrink-0 items-center justify-between gap-2 border-b border-border/50 px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-medium">
-          <FlaskConical className="h-4 w-4 text-primary" aria-hidden="true" />
-          Probar a {exampleName}
+          <AgentAvatar name={displayName} avatarKey={avatarKey} className="h-6 w-6 text-xs" />
+          Probar a {displayName}
         </div>
         <Button
           type="button"
@@ -112,21 +117,31 @@ export function ChatPanel({ exampleId, exampleName }: Props) {
                 Escribe un mensaje para probar al agente.
               </p>
               <p className="mt-1 text-xs text-muted-foreground/60">
-                Es una simulación — no se envía nada por WhatsApp.
+                Es una simulación — no se envía nada por WhatsApp. Puedes marcar cada respuesta como
+                correcta o corregirla, igual que en el enlace de corrección público.
               </p>
             </div>
           ) : null}
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={cn(
-                "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm",
-                m.role === "user"
-                  ? "ml-auto rounded-br-sm bg-primary/15 text-foreground"
-                  : "mr-auto rounded-bl-sm border border-border/60 bg-card text-foreground",
+            <div key={i} className={cn("flex flex-col gap-1", m.role === "user" ? "items-end" : "items-start")}>
+              <div
+                className={cn(
+                  "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm",
+                  m.role === "user"
+                    ? "ml-auto rounded-br-sm bg-primary/15 text-foreground"
+                    : "mr-auto rounded-bl-sm border border-border/60 bg-card text-foreground",
+                )}
+              >
+                {m.content}
+              </div>
+
+              {m.role === "assistant" && (
+                <MessageCorrection
+                  exampleId={exampleId}
+                  originalMessage={i > 0 ? messages[i - 1]?.content ?? "" : ""}
+                  assistantMessage={m.content}
+                />
               )}
-            >
-              {m.content}
             </div>
           ))}
           {loading && (

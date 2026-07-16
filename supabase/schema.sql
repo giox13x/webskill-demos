@@ -87,3 +87,11 @@ alter table example_messages add column if not exists session_id text not null d
 
 create index if not exists example_messages_session_idx
   on example_messages (example_id, session_id, created_at);
+
+-- ── Migración 3: identidad del agente (nombre + avatar) ────────────────────
+
+-- Nombre y avatar con los que el bot se presenta (como "Carlos" en el SaaS
+-- principal). Se pueden usar como {{agent_name}} / {{business_name}} dentro
+-- de las instrucciones, reglas o restricciones.
+alter table examples add column if not exists agent_name text not null default 'Carlos';
+alter table examples add column if not exists agent_avatar_key text not null default 'blue';

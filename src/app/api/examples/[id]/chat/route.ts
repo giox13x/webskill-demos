@@ -104,6 +104,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     instructions: example.instructions ?? "",
     rules: example.rules ?? "",
     restrictions: example.restrictions ?? "",
+    agentName: example.agent_name ?? "",
     files: (files ?? []) as ExampleFileRow[],
     corrections: (corrections ?? []) as ExampleCorrectionRow[],
   });

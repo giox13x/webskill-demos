@@ -120,13 +120,17 @@ export function buildSystemPrompt(opts: {
   instructions: string;
   rules: string;
   restrictions: string;
+  agentName?: string;
   files?: ExampleFileRow[];
   corrections?: ExampleCorrectionRow[];
 }): string {
+  const agentName = opts.agentName?.trim() || "el asistente";
+  const businessName = opts.clientName || "este negocio";
+
   const parts: string[] = [];
 
   parts.push(
-    `Eres el agente de WhatsApp de "${opts.clientName || "este negocio"}". ` +
+    `Eres ${agentName}, el agente de WhatsApp de "${businessName}". ` +
       `Respondes de forma natural, breve y útil, como lo haría una persona real por WhatsApp — en español, sin sonar robótico.`,
   );
 
@@ -157,5 +161,10 @@ export function buildSystemPrompt(opts: {
       "mantente siempre en el personaje del negocio descrito arriba.",
   );
 
-  return parts.join("\n\n");
+  const raw = parts.join("\n\n");
+
+  // Sustituye variables tipo {{agent_name}} / {{business_name}} que el
+  // equipo use dentro de las instrucciones, reglas o restricciones pegadas
+  // (igual que en el SaaS principal).
+  return raw.replaceAll("{{agent_name}}", agentName).replaceAll("{{business_name}}", businessName);
 }

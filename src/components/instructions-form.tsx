@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
+import { Check, Copy, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +14,14 @@ interface Props {
   corrections: ExampleCorrectionRow[];
 }
 
+function buildCopyAllText(instructions: string, rules: string, restrictions: string): string {
+  const parts: string[] = [];
+  if (instructions.trim()) parts.push(`INSTRUCCIONES DEL AGENTE\n${instructions.trim()}`);
+  if (rules.trim()) parts.push(`REGLAS — QUÉ SÍ DEBE HACER\n${rules.trim()}`);
+  if (restrictions.trim()) parts.push(`RESTRICCIONES — QUÉ NUNCA DEBE HACER\n${restrictions.trim()}`);
+  return parts.join("\n\n");
+}
+
 export function InstructionsForm({ example, corrections }: Props) {
   const router = useRouter();
   const [instructions, setInstructions] = useState(example.instructions ?? "");
@@ -22,6 +30,19 @@ export function InstructionsForm({ example, corrections }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopyAll() {
+    const text = buildCopyAllText(instructions, rules, restrictions);
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // noop — el navegador puede bloquear el portapapeles sin HTTPS
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,8 +69,27 @@ export function InstructionsForm({ example, corrections }: Props) {
     }
   }
 
+  const hasAnyText = Boolean(instructions.trim() || rules.trim() || restrictions.trim());
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => void handleCopyAll()}
+          disabled={!hasAnyText}
+        >
+          {copied ? (
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          Copiar todo
+        </Button>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="glass">
           <CardHeader>
@@ -58,10 +98,11 @@ export function InstructionsForm({ example, corrections }: Props) {
           </CardHeader>
           <CardContent>
             <Textarea
-              rows={5}
+              rows={16}
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               placeholder="Ej. Eres la recepcionista virtual. Saluda con calidez, agenda citas y resuelve dudas sobre tratamientos. Si preguntan algo médico específico, deriva con un profesional."
+              className="font-mono text-xs"
             />
           </CardContent>
         </Card>
@@ -73,10 +114,11 @@ export function InstructionsForm({ example, corrections }: Props) {
             </CardHeader>
             <CardContent>
               <Textarea
-                rows={5}
+                rows={12}
                 value={rules}
                 onChange={(e) => setRules(e.target.value)}
                 placeholder={"Una regla por línea, ej.\nOfrecer la primera consulta gratuita\nPedir nombre y teléfono para agendar"}
+                className="font-mono text-xs"
               />
             </CardContent>
           </Card>
@@ -86,10 +128,11 @@ export function InstructionsForm({ example, corrections }: Props) {
             </CardHeader>
             <CardContent>
               <Textarea
-                rows={5}
+                rows={12}
                 value={restrictions}
                 onChange={(e) => setRestrictions(e.target.value)}
                 placeholder={"Una restricción por línea, ej.\nNunca dar diagnósticos médicos\nNunca prometer descuentos no autorizados"}
+                className="font-mono text-xs"
               />
             </CardContent>
           </Card>

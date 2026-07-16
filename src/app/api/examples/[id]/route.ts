@@ -26,12 +26,14 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
 const PatchSchema = z.object({
   name: z.string().min(1).max(120).optional(),
-  clientInfo: z.string().max(8000).optional(),
-  instructions: z.string().max(8000).optional(),
-  rules: z.string().max(8000).optional(),
-  restrictions: z.string().max(8000).optional(),
+  clientInfo: z.string().max(40000).optional(),
+  instructions: z.string().max(40000).optional(),
+  rules: z.string().max(40000).optional(),
+  restrictions: z.string().max(40000).optional(),
   provider: z.enum(["openai", "anthropic", "gemini"]).nullable().optional(),
   model: z.string().max(200).nullable().optional(),
+  agentName: z.string().max(60).optional(),
+  agentAvatarKey: z.string().max(50).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
@@ -49,6 +51,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (b.restrictions !== undefined) update.restrictions = b.restrictions;
   if (b.provider !== undefined) update.provider = b.provider;
   if (b.model !== undefined) update.model = b.model;
+  if (b.agentName !== undefined) update.agent_name = b.agentName;
+  if (b.agentAvatarKey !== undefined) update.agent_avatar_key = b.agentAvatarKey;
 
   const db = supabaseAdmin();
   const { error } = await db.from("examples").update(update).eq("id", id);

@@ -18,6 +18,8 @@ export interface ExampleRow {
   restrictions: string;
   provider: ProviderKey | null;
   model: string | null;
+  agent_name: string;
+  agent_avatar_key: string;
   created_at: string;
   updated_at: string;
 }

@@ -21,6 +21,8 @@ export default async function ProbarPage({ params, searchParams }: PageProps) {
         exampleId={example.id}
         exampleSlug={example.slug}
         exampleName={example.name}
+        agentName={example.agent_name}
+        avatarKey={example.agent_avatar_key}
         corregir={corregir === "1"}
       />
     </div>
