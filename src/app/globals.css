@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Webskill Demos — Design System "Glass + Slate Indigo"
+ * Tokens en OKLch crudo -> Tailwind inyecta alpha vía oklch(var(--token) / <alpha-value>)
+ */
+
+@layer base {
+  :root {
+    --background: 0.98 0.003 260;
+    --foreground: 0.22 0.02 265;
+
+    --card: 0.995 0.002 260;
+    --card-foreground: 0.22 0.02 265;
+
+    --popover: 0.995 0.002 260;
+    --popover-foreground: 0.22 0.02 265;
+
+    --primary: 0.55 0.19 280;
+    --primary-foreground: 0.98 0.003 260;
+
+    --secondary: 0.94 0.008 260;
+    --secondary-foreground: 0.22 0.02 265;
+
+    --muted: 0.94 0.008 260;
+    --muted-foreground: 0.52 0.015 265;
+
+    --accent: 0.94 0.008 260;
+    --accent-foreground: 0.22 0.02 265;
+
+    --destructive: 0.58 0.22 25;
+    --destructive-foreground: 0.99 0 0;
+
+    --success: 0.65 0.15 155;
+
+    --border: 0.89 0.01 260;
+    --input: 0.89 0.01 260;
+    --ring: 0.55 0.19 280;
+
+    --glass-bg: 1 0 0;
+    --glass-bg-alpha: 0.72;
+    --glass-border-alpha: 0.5;
+
+    --radius: 0.875rem;
+    --font-sans: "Inter", system-ui, sans-serif;
+  }
+
+  .dark {
+    --background: 0.17 0.018 265;
+    --foreground: 0.96 0.005 260;
+
+    --card: 0.22 0.02 265;
+    --card-foreground: 0.96 0.005 260;
+
+    --popover: 0.22 0.02 265;
+    --popover-foreground: 0.96 0.005 260;
+
+    --primary: 0.68 0.18 280;
+    --primary-foreground: 0.15 0.02 265;
+
+    --secondary: 0.26 0.02 265;
+    --secondary-foreground: 0.96 0.005 260;
+
+    --muted: 0.26 0.02 265;
+    --muted-foreground: 0.68 0.015 265;
+
+    --accent: 0.26 0.02 265;
+    --accent-foreground: 0.96 0.005 260;
+
+    --destructive: 0.65 0.2 25;
+    --destructive-foreground: 0.98 0 0;
+
+    --success: 0.72 0.15 155;
+
+    --border: 0.32 0.02 265;
+    --input: 0.32 0.02 265;
+    --ring: 0.68 0.18 280;
+
+    --glass-bg: 1 0 0;
+    --glass-bg-alpha: 0.06;
+    --glass-border-alpha: 0.08;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 15% -10%, oklch(0.68 0.18 280 / 0.12), transparent 60%),
+      radial-gradient(50rem 40rem at 110% 10%, oklch(0.6 0.15 230 / 0.08), transparent 55%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass {
+    background-color: oklch(var(--glass-bg) / var(--glass-bg-alpha));
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid oklch(var(--glass-bg) / var(--glass-border-alpha));
+  }
+
+  .glass-strong {
+    background-color: oklch(var(--glass-bg) / calc(var(--glass-bg-alpha) * 2.2));
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
+    backdrop-filter: blur(28px) saturate(150%);
+    border: 1px solid oklch(var(--glass-bg) / var(--glass-border-alpha));
+  }
+}

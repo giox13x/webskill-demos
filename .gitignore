@@ -1,0 +1,14 @@
+node_modules
+.next
+.env*.local
+.env.production
+.vercel
+*.tsbuildinfo
+install*.log
+build*.log
+server*.log
+cacheverify.log
+reinstall-swc*.log
+swc*.log
+typecheck.log
+deploy-manifest*.json
