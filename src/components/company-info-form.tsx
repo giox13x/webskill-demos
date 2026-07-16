@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FilesPanel } from "@/components/files-panel";
@@ -18,6 +20,7 @@ interface Props {
 
 export function CompanyInfoForm({ example, files }: Props) {
   const router = useRouter();
+  const [name, setName] = useState(example.name ?? "");
   const [clientInfo, setClientInfo] = useState(example.client_info ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -26,6 +29,10 @@ export function CompanyInfoForm({ example, files }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) {
+      setError("El nombre del ejemplo no puede estar vacío");
+      return;
+    }
     setSaving(true);
     setSaved(false);
     setError(null);
@@ -33,7 +40,7 @@ export function CompanyInfoForm({ example, files }: Props) {
       const res = await fetch(`/api/examples/${example.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientInfo }),
+        body: JSON.stringify({ name: name.trim(), clientInfo }),
       });
       const json = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -72,7 +79,17 @@ export function CompanyInfoForm({ example, files }: Props) {
               responder como este cliente.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="example-name">Nombre del ejemplo</Label>
+              <Input
+                id="example-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. Clínica Dental Sulí"
+                maxLength={120}
+              />
+            </div>
             <Textarea
               rows={8}
               value={clientInfo}
