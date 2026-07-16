@@ -5,34 +5,29 @@ import { getAppSettings, apiKeyFor } from "@/lib/settings";
 import { buildSystemPrompt, generateReply } from "@/lib/ai";
 import { defaultModelFor } from "@/lib/models";
 import type { ProviderKey } from "@/lib/models";
-import { isUuid } from "@/lib/utils";
+import { loadExample } from "@/lib/examples";
+import type { ExampleCorrectionRow, ExampleFileRow } from "@/lib/types";
 
 interface Ctx {
   params: Promise<{ id: string }>;
 }
 
 const MAX_HISTORY_TURNS = 20;
+const DEFAULT_SESSION = "admin";
 
-async function loadExample(id: string) {
-  const db = supabaseAdmin();
-  const { data } = await db
-    .from("examples")
-    .select("*")
-    .eq(isUuid(id) ? "id" : "slug", id)
-    .maybeSingle();
-  return data;
-}
-
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const example = await loadExample(id);
   if (!example) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+  const sessionId = req.nextUrl.searchParams.get("sessionId") || DEFAULT_SESSION;
 
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("example_messages")
     .select("role, content, created_at")
     .eq("example_id", example.id)
+    .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -44,6 +39,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
 
 const PostSchema = z.object({
   message: z.string().min(1).max(2000),
+  sessionId: z.string().min(1).max(100).optional(),
 });
 
 export async function POST(req: NextRequest, { params }: Ctx) {
@@ -58,6 +54,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
 
   const example = await loadExample(id);
   if (!example) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const sessionId = parsed.data.sessionId || DEFAULT_SESSION;
 
   const db = supabaseAdmin();
   const settings = await getAppSettings();
@@ -77,11 +74,24 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     );
   }
 
-  const { data: history } = await db
-    .from("example_messages")
-    .select("role, content")
-    .eq("example_id", example.id)
-    .order("created_at", { ascending: true });
+  const [{ data: history }, { data: files }, { data: corrections }] = await Promise.all([
+    db
+      .from("example_messages")
+      .select("role, content")
+      .eq("example_id", example.id)
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true }),
+    db
+      .from("example_files")
+      .select("*")
+      .eq("example_id", example.id)
+      .eq("status", "processed"),
+    db
+      .from("example_corrections")
+      .select("*")
+      .eq("example_id", example.id)
+      .order("created_at", { ascending: true }),
+  ]);
 
   const priorMessages = (history ?? []).slice(-MAX_HISTORY_TURNS) as {
     role: "user" | "assistant";
@@ -94,6 +104,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     instructions: example.instructions ?? "",
     rules: example.rules ?? "",
     restrictions: example.restrictions ?? "",
+    files: (files ?? []) as ExampleFileRow[],
+    corrections: (corrections ?? []) as ExampleCorrectionRow[],
   });
 
   try {
@@ -106,8 +118,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     });
 
     await db.from("example_messages").insert([
-      { example_id: example.id, role: "user", content: parsed.data.message },
-      { example_id: example.id, role: "assistant", content: replyText },
+      { example_id: example.id, session_id: sessionId, role: "user", content: parsed.data.message },
+      { example_id: example.id, session_id: sessionId, role: "assistant", content: replyText },
     ]);
 
     return NextResponse.json({ text: replyText });
@@ -121,13 +133,18 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const example = await loadExample(id);
   if (!example) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const sessionId = req.nextUrl.searchParams.get("sessionId") || DEFAULT_SESSION;
 
   const db = supabaseAdmin();
-  const { error } = await db.from("example_messages").delete().eq("example_id", example.id);
+  const { error } = await db
+    .from("example_messages")
+    .delete()
+    .eq("example_id", example.id)
+    .eq("session_id", sessionId);
   if (error) {
     console.error("[api/examples/:id/chat DELETE]", error);
     return NextResponse.json({ error: "No se pudo borrar" }, { status: 500 });

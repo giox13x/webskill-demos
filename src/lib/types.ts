@@ -25,7 +25,30 @@ export interface ExampleRow {
 export interface ExampleMessageRow {
   id: string;
   example_id: string;
+  session_id: string;
   role: "user" | "assistant";
   content: string;
+  created_at: string;
+}
+
+export type FileStatus = "pending" | "processed" | "error";
+
+export interface ExampleFileRow {
+  id: string;
+  example_id: string;
+  filename: string;
+  content_type: string | null;
+  raw_text: string;
+  summary: string | null;
+  status: FileStatus;
+  created_at: string;
+}
+
+export interface ExampleCorrectionRow {
+  id: string;
+  example_id: string;
+  original_message: string;
+  wrong_response: string;
+  corrected_response: string;
   created_at: string;
 }

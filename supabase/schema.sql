@@ -48,3 +48,42 @@ create table if not exists example_messages (
 
 create index if not exists example_messages_example_id_idx
   on example_messages (example_id, created_at);
+
+-- ── Migración 2: archivos/datos, correcciones, sesiones por visitante ──────
+
+-- Archivos y datos de conocimiento por ejemplo. La IA los procesa (resume)
+-- para usarlos como base de conocimiento del agente.
+create table if not exists example_files (
+  id uuid primary key default gen_random_uuid(),
+  example_id uuid not null references examples (id) on delete cascade,
+  filename text not null,
+  content_type text,
+  raw_text text not null default '',
+  summary text,
+  status text not null default 'pending' check (status in ('pending', 'processed', 'error')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists example_files_example_id_idx
+  on example_files (example_id, created_at);
+
+-- Correcciones enseñadas desde el enlace de corrección: qué preguntó el
+-- visitante, qué respondió mal el agente, y qué debería haber respondido.
+create table if not exists example_corrections (
+  id uuid primary key default gen_random_uuid(),
+  example_id uuid not null references examples (id) on delete cascade,
+  original_message text not null,
+  wrong_response text not null,
+  corrected_response text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists example_corrections_example_id_idx
+  on example_corrections (example_id, created_at);
+
+-- Sesión de chat separada por visitante — así el enlace público de un cliente
+-- no se mezcla con tus propias pruebas ni con las de otro visitante.
+alter table example_messages add column if not exists session_id text not null default 'admin';
+
+create index if not exists example_messages_session_idx
+  on example_messages (example_id, session_id, created_at);

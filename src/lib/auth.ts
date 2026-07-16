@@ -1,5 +1,7 @@
-// Gate de acceso simple por contraseña compartida (opcional). Si no defines
-// ACCESS_PASSWORD como variable de entorno, la app queda abierta sin login.
+// Login del panel interno (usuario + contraseña). Se definen con las
+// variables de entorno AUTH_EMAIL y AUTH_PASSWORD; si no están configuradas,
+// la app queda abierta sin login (útil en local/dev).
+// Los enlaces públicos /probar/* nunca pasan por este gate (ver middleware.ts).
 
 export const AUTH_COOKIE = "wsk_auth";
 
@@ -11,8 +13,15 @@ export async function sha256Hex(value: string): Promise<string> {
     .join("");
 }
 
+export function getAuthCredentials(): { email: string; password: string } | null {
+  const email = process.env.AUTH_EMAIL;
+  const password = process.env.AUTH_PASSWORD;
+  if (!email || !password) return null;
+  return { email, password };
+}
+
 export async function expectedAuthCookieValue(): Promise<string | null> {
-  const pw = process.env.ACCESS_PASSWORD;
-  if (!pw) return null;
-  return sha256Hex(pw);
+  const creds = getAuthCredentials();
+  if (!creds) return null;
+  return sha256Hex(`${creds.email.toLowerCase()}:${creds.password}`);
 }
