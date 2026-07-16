@@ -34,6 +34,7 @@ const PatchSchema = z.object({
   model: z.string().max(200).nullable().optional(),
   agentName: z.string().max(60).optional(),
   agentAvatarKey: z.string().max(50).optional(),
+  businessName: z.string().max(120).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
@@ -53,6 +54,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (b.model !== undefined) update.model = b.model;
   if (b.agentName !== undefined) update.agent_name = b.agentName;
   if (b.agentAvatarKey !== undefined) update.agent_avatar_key = b.agentAvatarKey;
+  if (b.businessName !== undefined) update.business_name = b.businessName;
 
   const db = supabaseAdmin();
   const { error } = await db.from("examples").update(update).eq("id", id);

@@ -20,6 +20,7 @@ export interface ExampleRow {
   model: string | null;
   agent_name: string;
   agent_avatar_key: string;
+  business_name: string;
   created_at: string;
   updated_at: string;
 }

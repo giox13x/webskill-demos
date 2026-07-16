@@ -95,3 +95,9 @@ create index if not exists example_messages_session_idx
 -- de las instrucciones, reglas o restricciones.
 alter table examples add column if not exists agent_name text not null default 'Carlos';
 alter table examples add column if not exists agent_avatar_key text not null default 'blue';
+
+-- ── Migración 4: nombre de la empresa ───────────────────────────────────────
+
+-- Nombre de la empresa/cliente con el que se sustituye {{business_name}}.
+-- Si se deja vacío, se usa el nombre del ejemplo (example.name) como antes.
+alter table examples add column if not exists business_name text not null default '';

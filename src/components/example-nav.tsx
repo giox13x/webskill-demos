@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, KeyRound, ListChecks, Building2 } from "lucide-react";
+import { MessageSquare, KeyRound, ListChecks, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -14,6 +14,7 @@ const TABS = [
   { href: "/api", label: "API y modelo", icon: KeyRound },
   { href: "/instrucciones", label: "Instrucciones y reglas", icon: ListChecks },
   { href: "/info", label: "Info de la empresa", icon: Building2 },
+  { href: "/conversaciones", label: "Conversaciones", icon: Users },
 ];
 
 export function ExampleNav({ slug }: Props) {

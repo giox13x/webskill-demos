@@ -105,6 +105,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     rules: example.rules ?? "",
     restrictions: example.restrictions ?? "",
     agentName: example.agent_name ?? "",
+    businessName: example.business_name ?? "",
     files: (files ?? []) as ExampleFileRow[],
     corrections: (corrections ?? []) as ExampleCorrectionRow[],
   });
@@ -138,14 +139,17 @@ export async function DELETE(req: NextRequest, { params }: Ctx) {
   const { id } = await params;
   const example = await loadExample(id);
   if (!example) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  const sessionId = req.nextUrl.searchParams.get("sessionId") || DEFAULT_SESSION;
 
   const db = supabaseAdmin();
-  const { error } = await db
-    .from("example_messages")
-    .delete()
-    .eq("example_id", example.id)
-    .eq("session_id", sessionId);
+  const deleteAll = req.nextUrl.searchParams.get("all") === "1";
+
+  let query = db.from("example_messages").delete().eq("example_id", example.id);
+  if (!deleteAll) {
+    const sessionId = req.nextUrl.searchParams.get("sessionId") || DEFAULT_SESSION;
+    query = query.eq("session_id", sessionId);
+  }
+
+  const { error } = await query;
   if (error) {
     console.error("[api/examples/:id/chat DELETE]", error);
     return NextResponse.json({ error: "No se pudo borrar" }, { status: 500 });

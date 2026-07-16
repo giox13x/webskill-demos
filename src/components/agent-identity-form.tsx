@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +18,12 @@ interface Props {
 export function AgentIdentityForm({ example }: Props) {
   const router = useRouter();
   const [agentName, setAgentName] = useState(example.agent_name || "Carlos");
+  const [businessName, setBusinessName] = useState(example.business_name || "");
   const [avatarKey, setAvatarKey] = useState(example.agent_avatar_key || DEFAULT_AVATAR_KEY);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +37,7 @@ export function AgentIdentityForm({ example }: Props) {
         body: JSON.stringify({
           agentName: agentName.trim() || "Carlos",
           agentAvatarKey: avatarKey,
+          businessName: businessName.trim(),
         }),
       });
       const json = (await res.json()) as { error?: string };
@@ -51,6 +54,22 @@ export function AgentIdentityForm({ example }: Props) {
     }
   }
 
+  async function handleResetChats() {
+    if (
+      !window.confirm(
+        "¿Reiniciar todas las conversaciones de este ejemplo? Se borrará tu chat de prueba y también las conversaciones de todos los clientes que hayan probado el enlace público. No se puede deshacer.",
+      )
+    )
+      return;
+    setResetting(true);
+    try {
+      await fetch(`/api/examples/${example.id}/chat?all=1`, { method: "DELETE" });
+      router.refresh();
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Card className="glass">
@@ -63,15 +82,27 @@ export function AgentIdentityForm({ example }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="agent-name">Nombre del agente</Label>
-            <Input
-              id="agent-name"
-              value={agentName}
-              onChange={(e) => setAgentName(e.target.value)}
-              placeholder="Ej. Carlos"
-              maxLength={60}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="agent-name">Nombre del agente</Label>
+              <Input
+                id="agent-name"
+                value={agentName}
+                onChange={(e) => setAgentName(e.target.value)}
+                placeholder="Ej. Carlos"
+                maxLength={60}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="business-name">Nombre de la empresa</Label>
+              <Input
+                id="business-name"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder={`Ej. ${example.name} — si lo dejas vacío se usa este nombre`}
+                maxLength={120}
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label>Avatar</Label>
@@ -83,14 +114,30 @@ export function AgentIdentityForm({ example }: Props) {
       {error && <p className="text-sm text-destructive">{error}</p>}
       {saved && !error && <p className="text-sm text-success">Guardado.</p>}
 
-      <Button type="submit" disabled={saving}>
-        {saving ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        ) : (
-          <Save className="h-4 w-4" aria-hidden="true" />
-        )}
-        Guardar
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="submit" disabled={saving}>
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Save className="h-4 w-4" aria-hidden="true" />
+          )}
+          Guardar
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void handleResetChats()}
+          disabled={resetting}
+          className="text-muted-foreground hover:text-destructive"
+        >
+          {resetting ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          )}
+          Reiniciar todas las conversaciones
+        </Button>
+      </div>
     </form>
   );
 }

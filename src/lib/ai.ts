@@ -121,11 +121,12 @@ export function buildSystemPrompt(opts: {
   rules: string;
   restrictions: string;
   agentName?: string;
+  businessName?: string;
   files?: ExampleFileRow[];
   corrections?: ExampleCorrectionRow[];
 }): string {
   const agentName = opts.agentName?.trim() || "el asistente";
-  const businessName = opts.clientName || "este negocio";
+  const businessName = opts.businessName?.trim() || opts.clientName || "este negocio";
 
   const parts: string[] = [];
 
